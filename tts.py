@@ -8,18 +8,34 @@ import soundfile as sf
 from function import *
 
 vits_model_dir = f"{vits_target_dir}/{vits_model_name}"
+vits_tokens_path = f"{vits_model_dir}/tokens.txt"
+vits_lexicon_path = f"{vits_model_dir}/lexicon.txt"
+vits_dict_dir = f"{vits_model_dir}/dict"
 vits_tts = None
 try:
     vits_model_path = glob.glob(os.path.join(vits_model_dir, "*.onnx"))[0]
-    vits_tokens_path = f"{vits_model_dir}/tokens.txt"
-    vits_lexicon_path = f"{vits_model_dir}/lexicon.txt"
-    vits_dict_dir = f"{vits_model_dir}/dict"
     vits_tts_config = sherpa_onnx.OfflineTtsConfig(model=sherpa_onnx.OfflineTtsModelConfig(
         vits=sherpa_onnx.OfflineTtsVitsModelConfig(model=vits_model_path, lexicon=vits_lexicon_path,
                                                    tokens=vits_tokens_path, dict_dir=vits_dict_dir), provider="cpu",
         num_threads=int(os.cpu_count()) - 1))
 except Exception as e1:
     print(f"VITS模型加载错误，详情：{e1}")
+zipvoice_tts = None
+zip_tokens_path = f"{zipvoice_dir}/tokens.txt"
+zip_encoder_path = f"{zipvoice_dir}/encoder.int8.onnx"
+zip_decoder_path = f"{zipvoice_dir}/decoder.int8.onnx"
+zip_data_dir_path = f"{zipvoice_dir}/espeak-ng-data"
+zip_lexicon_path = f"{zipvoice_dir}/lexicon.txt"
+zip_vocoder_path = f"{zipvoice_dir}/vocos_24khz.onnx"
+try:
+    zipvoice_config = sherpa_onnx.OfflineTtsConfig(
+        model=sherpa_onnx.OfflineTtsModelConfig(zipvoice=sherpa_onnx.OfflineTtsZipvoiceModelConfig(
+            tokens=zip_tokens_path, encoder=zip_encoder_path, decoder=zip_decoder_path, data_dir=zip_data_dir_path,
+            lexicon=zip_lexicon_path, vocoder=zip_vocoder_path, feat_scale=0.1, t_shift=0.5, target_rms=0.1,
+            guidance_scale=1.0), provider="cpu", debug=False, num_threads=int(os.cpu_count()) - 1), rule_fsts="",
+        max_num_sentences=1)
+except Exception as e1:
+    print(f"ZipVoice模型加载错误，详情：{e1}")
 voice_path = 'data/cache/cache_voice'
 lang_mapping = {"中文": "zh", "英语": "uk", "日语": "jp"}
 select_lang = lang_mapping.get(paddle_lang, "kor")
@@ -39,13 +55,13 @@ except Exception as e1:
     print(f"pyttsx3初始化错误，详情：{e1}")
 
 
-def stop_tts():  # 停止播放
+def stop_tts():
     global play_tts_flag
     pg.quit()
     play_tts_flag = 0
 
 
-def tts_vits(text):  # 内置VITS
+def tts_vits(text):
     global vits_tts
     if vits_tts is None:
         vits_tts = sherpa_onnx.OfflineTts(vits_tts_config)
@@ -60,15 +76,52 @@ def tts_vits(text):  # 内置VITS
         sf.write(voice_path, audio.samples, samplerate=audio.sample_rate, subtype="PCM_16", format="wav")
 
 
-def custom_tts(text):  # 自定义TTS
+def tts_zipvoice(text):
+    def read_wave(wave_filename):
+        with wave.open(wave_filename) as f:
+            nchannels = f.getnchannels()
+            sampwidth = f.getsampwidth()
+            framerate = f.getframerate()
+            num_samples = f.getnframes()
+            frames = f.readframes(num_samples)
+            dtype_map = {1: np.uint8, 2: np.int16, 3: np.int32, 4: np.int32}
+            dtype = dtype_map[sampwidth]
+            if sampwidth == 3:
+                samples = np.frombuffer(frames, dtype=np.uint8)
+                samples = np.zeros((samples.shape[0] // 3, 4), dtype=np.uint8)
+                samples[:, 1:] = frames.reshape(-1, 3)
+                samples = samples.view(np.int32).reshape(-1)
+            else:
+                samples = np.frombuffer(frames, dtype=dtype)
+            if nchannels > 1:
+                samples = samples.reshape(-1, nchannels)
+                samples = np.mean(samples, axis=1)
+            samples_float32 = samples.astype(np.float32)
+            if sampwidth == 1:
+                samples_float32 = (samples_float32 - 128) / 128
+            elif sampwidth == 2:
+                samples_float32 = samples_float32 / 32768.0
+            elif sampwidth in (3, 4):
+                max_val = 2 ** (8 * sampwidth - 1)
+                samples_float32 = samples_float32 / max_val
+            return samples_float32, framerate
+
+    global zipvoice_tts
+    if zipvoice_tts is None:
+        zipvoice_tts = sherpa_onnx.OfflineTts(zipvoice_config)
+    prompt_samples, sample_rate = read_wave(zipvoice_prompt_audio)
+    audio = zipvoice_tts.generate(text, zipvoice_prompt_text, prompt_samples, sample_rate, speed=1, num_steps=4)
+    sf.write(voice_path, audio.samples, samplerate=audio.sample_rate, subtype="PCM_16", format="wav")
+
+
+def custom_tts(text):
     client = OpenAI(api_key=custom_tts_key, base_url=custom_tts_url)
     with client.audio.speech.with_streaming_response.create(
             model=custom_tts_model, voice=custom_tts_voice, input=text, response_format="mp3") as response:
         response.stream_to_file(voice_path)
 
 
-# open_source_project_address:https://github.com/MewCo-AI/ai_virtual_mate_comm
-def get_tts_play(text):  # 语音合成并播放
+def get_tts_play(text):
     global play_tts_flag
     play_tts_flag = 1
 
@@ -95,7 +148,16 @@ def get_tts_play(text):  # 语音合成并播放
         return [seg.strip() for seg in combined if seg.strip()]  # 过滤掉空字符串的分段
 
     async def ms_edge_tts(segment2):
-        communicate = edge_tts.Communicate(segment2, edge_select_speaker, rate=f"{edge_rate}%", pitch=f"{edge_pitch}Hz")
+        if edge_rate >= 0:
+            edge_rate2 = "+" + str(edge_rate)
+        else:
+            edge_rate2 = str(edge_rate)
+        if edge_pitch >= 0:
+            edge_pitch2 = "+" + str(edge_pitch)
+        else:
+            edge_pitch2 = str(edge_pitch)
+        communicate = edge_tts.Communicate(segment2, edge_select_speaker, rate=f"{edge_rate2}%",
+                                           pitch=f"{edge_pitch2}Hz")
         await communicate.save(voice_path)
 
     processed_text = text.split("</think>")[-1].strip().replace("#", "").replace("*", "")
@@ -132,16 +194,30 @@ def get_tts_play(text):  # 语音合成并播放
                     except Exception as e:
                         if not any(msg in str(e) for msg in error_messages):
                             notice(f"本地GPT-SoVITS整合包API服务器未开启，错误详情：{e}")
-                elif tts_menu.get() == "本地CosyVoice":
-                    url = f'http://{local_tts_ip}:9881/cosyvoice/?text={segment}'
+                elif tts_menu.get() == "本地OmniVoice":
+                    url_clone = f'http://{local_tts_ip}:9881/omnivoice_clone/?text={segment}'
+                    url_design = f'http://{local_tts_ip}:9881/omnivoice_design/?text={segment}&instruct={omnivoice_design_text}'
+                    try:
+                        if tts_input_mode == "声音克隆":
+                            res = rq.get(url_clone)
+                        else:
+                            res = rq.get(url_design)
+                        with open(voice_path, 'wb') as f:
+                            f.write(res.content)
+                        play_voice()
+                    except Exception as e:
+                        if not any(msg in str(e) for msg in error_messages):
+                            notice(f"本地OmniVoice整合包API服务器未开启，错误详情：{e}")
+                elif tts_menu.get() == "本地Qwen-TTS":
+                    url = f'http://{local_tts_ip}:9882/qwen_tts/?text={segment}'
                     try:
                         res = rq.get(url)
                         with open(voice_path, 'wb') as f:
                             f.write(res.content)
                         play_voice()
                     except Exception as e:
-                        if "Error opening" not in str(e):
-                            notice(f"本地CosyVoice整合包API服务器未开启，错误详情：{e}")
+                        if not any(msg in str(e) for msg in error_messages):
+                            notice(f"本地Qwen-TTS整合包API服务器未开启，错误详情：{e}")
                 elif tts_menu.get() == "本地Index-TTS":
                     url = f'http://{local_tts_ip}:9884/indextts/?text={segment}'
                     try:
@@ -153,9 +229,13 @@ def get_tts_play(text):  # 语音合成并播放
                         if not any(msg in str(e) for msg in error_messages):
                             notice(f"本地Index-TTS整合包API服务器未开启，错误详情：{e}")
                 elif tts_menu.get() == "本地VoxCPM":
-                    url = f'http://{local_tts_ip}:9885/voxcpm/?text={segment}'
+                    url_clone = f'http://{local_tts_ip}:9885/voxcpm/?text={segment}'
+                    url_design = f'http://{local_tts_ip}:9885/voxcpm_design/?text={segment}&instruct={voxcpm_design_text}'
                     try:
-                        res = rq.get(url)
+                        if tts_input_mode == "声音克隆":
+                            res = rq.get(url_clone)
+                        else:
+                            res = rq.get(url_design)
                         with open(voice_path, 'wb') as f:
                             f.write(res.content)
                         play_voice()
@@ -177,6 +257,13 @@ def get_tts_play(text):  # 语音合成并播放
                     except Exception as e:
                         if not any(msg in str(e) for msg in error_messages):
                             notice(f"内置低延迟VITS服务拥挤，详情：{e}")
+                elif tts_menu.get() == "内置ZipVoice":
+                    try:
+                        tts_zipvoice(segment)
+                        play_voice()
+                    except Exception as e:
+                        if not any(msg in str(e) for msg in error_messages):
+                            notice(f"内置ZipVoice服务拥挤，详情：{e}")
                 elif tts_menu.get() == "自定义API-TTS":
                     try:
                         custom_tts(segment)
@@ -186,6 +273,6 @@ def get_tts_play(text):  # 语音合成并播放
                             notice(f"请前往data/set/custom_tts_set.txt正确配置自定义API-TTS，错误详情：{e}")
         except Exception as e:
             if not any(msg in str(e) for msg in error_messages):
-                notice(f"{tts_menu.get()}服务拥挤或出错，可选择其他语音合成引擎，错误详情：{str(e)}")
+                notice(f"{tts_menu.get()}服务拥挤或出错，可选择其他语音合成引擎，错误：{str(e)}")
 
     Thread(target=get_tts_play_th).start()

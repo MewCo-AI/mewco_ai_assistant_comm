@@ -17,7 +17,7 @@ mmd_web_template = """
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="assets/image/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MMD 3D角色 - 枫云AI虚拟伙伴社区版</title>
+    <title>MMD 3D角色 - 枫云AI助手社区版</title>
     <style>
         body {
             margin: 0;
@@ -53,7 +53,7 @@ mmd_vmd_web_template = """
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="assets/image/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MMD 3D动作 - 枫云AI虚拟伙伴社区版</title>
+    <title>MMD 3D动作 - 枫云AI助手社区版</title>
     <style>
         body {
             margin: 0;
@@ -81,7 +81,6 @@ mmd_vmd_web_template = """
 """
 
 
-# open_source_project_address:https://github.com/MewCo-AI/ai_virtual_mate_comm
 @app.route('/')
 def index():
     return render_template_string(mmd_web_template)

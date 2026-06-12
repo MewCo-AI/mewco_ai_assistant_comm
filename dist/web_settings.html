@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>软件设置 - 枫云AI助手社区版</title>
+    <link rel="icon" href="dist/assets/image/logo.png" type="image/png">
+    <style>
+        :root {
+            --bg-color: #f8f9fa; /* 页面整体背景色 - 浅灰简约 */
+            --container-bg: #ffffff; /* 容器背景色 - 纯白 */
+            --section-bg: #fdfdfd; /* 区块背景色 - 近白 */
+            --input-bg: #ffffff; /* 输入框背景色 - 纯白 */
+            --border-color: #dee2e6; /* 边框颜色 - 浅灰 */
+            --text-color: #212529; /* 主文本颜色 - 深灰/近黑 */
+            --highlight-color: #0d6efd; /* 高亮色 - 简约蓝色 */
+            --active-bg: #e9f5ff; /* 激活标签背景色 - 浅蓝晕染 */
+            --hover-bg: #0d6efd; /* 按钮悬浮背景色 - 高亮蓝加深 */
+        }
+        body {
+            font-family: 'Segoe UI', 'SimHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--container-bg);
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .header {
+            padding: 15px 20px;
+            background-color: var(--section-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        h1 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 22px;
+        }
+        .main-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 220px;
+            background-color: #fefefe; /* 侧边栏背景 - 纯白 */
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 10px 0;
+            flex-shrink: 0;
+        }
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            color: #29313b;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .tab:hover {
+            background-color: rgba(0,0,0,0.02); /* 悬浮背景 - 极浅灰 */
+            color: var(--text-color);
+        }
+        .tab.active {
+            background-color: var(--active-bg);
+            color: var(--highlight-color); /* 激活标签文本 - 高亮蓝 */
+            border-left-color: var(--highlight-color);
+            font-weight: bold;
+        }
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--container-bg);
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+            padding-bottom: 80px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: var(--section-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-color);
+        }
+        .section h2 {
+            margin-top: 0;
+            color: var(--highlight-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        .section h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background-color: var(--highlight-color);
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .form-group > label {
+            width: 180px;
+            min-width: 180px;
+            font-weight: bold;
+            color: #495057; /* 标签文本颜色 - 中深灰 */
+        }
+        input, select, textarea {
+            padding: 8px 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-color);
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--highlight-color);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .save-btn-container {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            background: linear-gradient(to top, var(--container-bg) 80%, transparent);
+            padding: 15px 40px 20px;
+            text-align: right;
+            pointer-events: none;
+            z-index: 100;
+        }
+        button {
+            pointer-events: auto;
+            background-color: var(--highlight-color);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, background 0.2s;
+        }
+        button:hover {
+            background-color: var(--hover-bg);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 2000;
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e9ecef; /* 滚动条轨道 - 浅灰 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #adb5bd; /* 滚动条滑块 - 中灰 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--highlight-color);
+        }
+        @media screen and (max-width: 900px) {
+            .main-body { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .tab { white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
+            .tab.active { border-left: none; border-bottom-color: var(--highlight-color); }
+            .form-group { flex-direction: column; align-items: flex-start; }
+            .form-group > label { width: 100%; margin-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><img src="dist/assets/image/logo.png" alt="Logo" style="width: 20px; height: 20px; margin-right: 5px;">软件设置</h1>
+        </div>
+        <div class="main-body">
+            <div class="sidebar">
+                <div class="tab active" data-tab="basic">👤 基本信息与提示词</div>
+                <div class="tab" data-tab="asr-engine">🎙️ 语音识别(ASR)</div>
+                <div class="tab" data-tab="tts-engine">🔊 语音合成(TTS)</div>
+                <div class="tab" data-tab="ai-model">🤖 大模型(LLM,VLM)</div>
+                <div class="tab" data-tab="image-engine">🖼️ 图像识别与生成</div>
+                <div class="tab" data-tab="knowledge">📚 知识库与记忆</div>
+                <div class="tab" data-tab="display">🖥️ 桌宠界面与端口</div>
+                <div class="tab" data-tab="smart-home">🏠 智能家居</div>
+                <div class="tab" data-tab="agi-pc-pro">🕹️ 自主操控Pro</div>
+                <div class="tab" data-tab="im-robot">💬 IM聊天机器人</div>
+                <div class="tab" data-tab="openclaw">🦞 OpenClaw龙虾</div>
+                <div class="tab" data-tab="mqtt">🔗 MQTT/QwenPaw</div>
+                <div class="tab" data-tab="cloud-api">☁️ Free云端AI Key</div>
+            </div>
+            <div class="content-area">
+                <form id="config-form">
+                    <div class="tab-content active" id="basic">
+                        <div class="section">
+                            <h2>基本信息</h2>
+                            <div class="form-group">
+                                <label for="用户名">用户名</label>
+                                <input type="text" id="用户名" name="用户名">
+                            </div>
+                            <div class="form-group">
+                                <label for="AI助手名称">AI助手名称</label>
+                                <input type="text" id="AI助手名称" name="AI助手名称">
+                            </div>
+                            <div class="form-group">
+                                <label for="默认天气城市">默认天气城市</label>
+                                <input type="text" id="默认天气城市" name="默认天气城市">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>提示词与思维链</h2>
+                            <div class="form-group">
+                                <label for="AI助手提示词">AI助手提示词</label>
+                                <textarea id="AI助手提示词" name="AI助手提示词" rows="10"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="思维链think过滤">思维链think过滤</label>
+                                <select id="思维链think过滤" name="思维链think过滤">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="asr-engine">
+                        <div class="section">
+                            <h2>基础设置</h2>
+                            <div class="form-group">
+                                <label for="麦克风编号">麦克风编号</label>
+                                <input type="number" id="麦克风编号" name="麦克风编号">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义语音唤醒词">自定义语音唤醒词</label>
+                                <input type="text" id="自定义语音唤醒词" name="自定义语音唤醒词">
+                            </div>
+                            <div class="form-group">
+                                <label for="语音识别灵敏度">语音识别灵敏度</label>
+                                <select id="语音识别灵敏度" name="语音识别灵敏度">
+                                    <option value="高">高</option>
+                                    <option value="中">中</option>
+                                    <option value="低">低</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="实时语音打断">实时语音打断</label>
+                                <select id="实时语音打断" name="实时语音打断">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>声纹识别</h2>
+                            <div class="form-group">
+                                <label for="声纹识别">声纹识别开关</label>
+                                <select id="声纹识别" name="声纹识别">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="声纹识别阈值">声纹识别阈值(0.1~0.9)</label>
+                                <input type="number" step="0.1" id="声纹识别阈值" name="声纹识别阈值">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>音频事件检测</h2>
+                            <div class="form-group">
+                                <label for="音频事件检测开关">音频事件检测开关</label>
+                                <select id="音频事件检测开关" name="音频事件检测开关">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="音频事件检测阈值">音频事件检测阈值(0.1~0.9)</label>
+                                <input type="number" step="0.1" id="音频事件检测阈值" name="音频事件检测阈值">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>其他语音设置</h2>
+                            <div class="form-group">
+                                <label for="实时语音开关键">实时语音开关键 Alt+</label>
+                                <input type="text" id="实时语音开关键" name="实时语音开关键">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="tts-engine">
+                        <div class="section">
+                            <h2>基础设置</h2>
+                            <div class="form-group">
+                                <label for="流式语音合成开关">流式语音合成开关</label>
+                                <select id="流式语音合成开关" name="流式语音合成开关">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="VITS-ONNX模型名">VITS-ONNX模型名</label>
+                                <input type="text" id="VITS-ONNX模型名" name="VITS-ONNX模型名">
+                            </div>
+                            <div class="form-group">
+                                <label for="本地TTS服务器IP">本地TTS服务器IP</label>
+                                <input type="text" id="本地TTS服务器IP" name="本地TTS服务器IP">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>edge-tts(云端)</h2>
+                            <div class="form-group">
+                                <label for="edge-tts音色">edge-tts音色</label>
+                                <select id="edge-tts音色" name="edge-tts音色">
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edge-tts语速">edge-tts语速</label>
+                                <input type="text" id="edge-tts语速" name="edge-tts语速">
+                            </div>
+                            <div class="form-group">
+                                <label for="edge-tts音高">edge-tts音高</label>
+                                <input type="text" id="edge-tts音高" name="edge-tts音高">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>GPT-SoVITS(本地)</h2>
+                            <div class="form-group">
+                                <label for="GPT-SoVITS端口">GPT-SoVITS端口</label>
+                                <input type="number" id="GPT-SoVITS端口" name="GPT-SoVITS端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="GPT-SoVITS参考音频文本">参考音频文本</label>
+                                <input type="text" id="GPT-SoVITS参考音频文本" name="GPT-SoVITS参考音频文本">
+                            </div>
+                            <div class="form-group">
+                                <label for="GPT-SoVITS参考音频路径(位于GSV整合包内)">参考音频路径(位于GSV整合包内)</label>
+                                <input type="text" id="GPT-SoVITS参考音频路径(位于GSV整合包内)" name="GPT-SoVITS参考音频路径(位于GSV整合包内)">
+                            </div>
+                            <div class="form-group">
+                                <label for="GPT-SoVITS参考音频语言">参考音频语言</label>
+                                <input type="text" id="GPT-SoVITS参考音频语言" name="GPT-SoVITS参考音频语言">
+                            </div>
+                            <div class="form-group">
+                                <label for="GPT-SoVITS合成输出语言">合成输出语言</label>
+                                <input type="text" id="GPT-SoVITS合成输出语言" name="GPT-SoVITS合成输出语言">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>ZipVoice(内置)</h2>
+                             <div class="form-group">
+                                <label for="ZipVoice参考音频路径">参考音频路径(位于软件内)</label>
+                                <input type="text" id="ZipVoice参考音频路径" name="ZipVoice参考音频路径">
+                            </div>
+                            <div class="form-group">
+                                <label for="ZipVoice参考音频文本">参考音频文本</label>
+                                <input type="text" id="ZipVoice参考音频文本" name="ZipVoice参考音频文本">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>OmniVoice & VoxCPM(本地)</h2>
+                             <div class="form-group">
+                                <label for="语音合成输入模式">语音合成输入模式</label>
+                                <select id="语音合成输入模式" name="语音合成输入模式">
+                                    <option value="声音设计">声音设计</option>
+                                    <option value="声音克隆">声音克隆</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="OmniVoice声音设计">OmniVoice声音设计</label>
+                                <input type="text" id="OmniVoice声音设计" name="OmniVoice声音设计">
+                            </div>
+                            <div class="form-group">
+                                <label for="VoxCPM声音设计">VoxCPM声音设计</label>
+                                <input type="text" id="VoxCPM声音设计" name="VoxCPM声音设计">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>PaddleTTS(云端)</h2>
+                            <div class="form-group">
+                                <label for="PaddleTTS语速">PaddleTTS语速</label>
+                                <select id="PaddleTTS语速" name="PaddleTTS语速">
+                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="PaddleTTS语言">PaddleTTS语言</label>
+                                <select id="PaddleTTS语言" name="PaddleTTS语言">
+                                    <option value="中文">中文</option>
+                                    <option value="英语">英语</option>
+                                    <option value="日语">日语</option>
+                                    <option value="韩语">韩语</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>自定义TTS API</h2>
+                            <div class="form-group">
+                                <label for="自定义TTS地址base_url">地址 base_url</label>
+                                <input type="text" id="自定义TTS地址base_url" name="自定义TTS地址base_url">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义TTS模型model">模型 model</label>
+                                <input type="text" id="自定义TTS模型model" name="自定义TTS模型model">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义TTS语音voice">语音 voice</label>
+                                <input type="text" id="自定义TTS语音voice" name="自定义TTS语音voice">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义TTS密钥api_key">密钥 api_key</label>
+                                <input type="password" id="自定义TTS密钥api_key" name="自定义TTS密钥api_key">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="ai-model">
+                        <div class="section">
+                            <h2>基础设置</h2>
+                            <div class="form-group">
+                                <label for="本地LLM服务器IP">本地LLM服务器IP</label>
+                                <input type="text" id="本地LLM服务器IP" name="本地LLM服务器IP">
+                            </div>
+                             <div class="form-group">
+                                <label for="本地VLM服务器IP">本地VLM服务器IP</label>
+                                <input type="text" id="本地VLM服务器IP" name="本地VLM服务器IP">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>本地GGUF模型推理框架</h2>
+                            <div class="form-group">
+                                <label for="LM Studio端口">LM Studio端口</label>
+                                <input type="number" id="LM Studio端口" name="LM Studio端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="KoboldCpp端口">KoboldCpp端口</label>
+                                <input type="number" id="KoboldCpp端口" name="KoboldCpp端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="llama.cpp端口">llama.cpp端口</label>
+                                <input type="number" id="llama.cpp端口" name="llama.cpp端口">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>Ollama(本地)</h2>
+                            <div class="form-group">
+                                <label for="Ollama大语言模型">大语言模型(LLM)</label>
+                                <input type="text" id="Ollama大语言模型" name="Ollama大语言模型">
+                            </div>
+                            <div class="form-group">
+                                <label for="Ollama多模态VLM">多模态视觉(VLM)</label>
+                                <input type="text" id="Ollama多模态VLM" name="Ollama多模态VLM">
+                            </div>
+                            <div class="form-group">
+                                <label for="Ollama端口">端口</label>
+                                <input type="number" id="Ollama端口" name="Ollama端口">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>自定义OpenAI兼容API-LLM</h2>
+                            <div class="form-group">
+                                <label for="自定义API-LLM-base_url">地址 base_url</label>
+                                <input type="text" id="自定义API-LLM-base_url" name="自定义API-LLM-base_url">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义API-LLM-api_key">密钥 api_key</label>
+                                <input type="password" id="自定义API-LLM-api_key" name="自定义API-LLM-api_key">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义API-LLM-model">LLM model</label>
+                                <input type="text" id="自定义API-LLM-model" name="自定义API-LLM-model">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>自定义OpenAI兼容API-VLM</h2>
+                            <div class="form-group">
+                                <label for="自定义API-VLM-base_url">地址 base_url</label>
+                                <input type="text" id="自定义API-VLM-base_url" name="自定义API-VLM-base_url">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义API-VLM-api_key">密钥 api_key</label>
+                                <input type="password" id="自定义API-VLM-api_key" name="自定义API-VLM-api_key">
+                            </div>
+                            <div class="form-group">
+                                <label for="自定义API-VLM-model">VLM model</label>
+                                <input type="text" id="自定义API-VLM-model" name="自定义API-VLM-model">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>Transformers(本地)</h2>
+                            <div class="form-group">
+                                <label for="Transformers端口">端口</label>
+                                <input type="number" id="Transformers端口" name="Transformers端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="Transformers模型">模型路径(位于TF整合包内)</label>
+                                <input type="text" id="Transformers模型" name="Transformers模型">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="image-engine">
+                        <div class="section">
+                            <h2>摄像头配置</h2>
+                            <div class="form-group">
+                                <label for="摄像头权限">摄像头权限</label>
+                                <select id="摄像头权限" name="摄像头权限">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="摄像头编号">摄像头编号</label>
+                                <input type="number" id="摄像头编号" name="摄像头编号">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>AI绘画</h2>
+                            <div class="form-group">
+                                <label for="图像生成引擎">图像生成引擎</label>
+                                <select id="图像生成引擎" name="图像生成引擎">
+                                    <option value="云端CogView-3-Flash">云端CogView-3-Flash</option>
+                                    <option value="云端Kolors">云端Kolors</option>
+                                    <option value="云端文心Web">云端文心Web</option>
+                                    <option value="本地SD API">本地SD API</option>
+                                    <option value="关闭AI绘画">关闭AI绘画</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="本地SD AI绘画端口">本地SD AI绘画端口</label>
+                                <input type="number" id="本地SD AI绘画端口" name="本地SD AI绘画端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="本地AI绘画服务器IP">本地AI绘画服务器IP</label>
+                                <input type="text" id="本地AI绘画服务器IP" name="本地AI绘画服务器IP">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="knowledge">
+                        <div class="section">
+                            <h2>知识库</h2>
+                            <div class="form-group">
+                                <label for="AnythingLLM工作区">AnythingLLM工作区</label>
+                                <input type="text" id="AnythingLLM工作区" name="AnythingLLM工作区">
+                            </div>
+                            <div class="form-group">
+                                <label for="AnythingLLM密钥">AnythingLLM密钥</label>
+                                <input type="text" id="AnythingLLM密钥" name="AnythingLLM密钥">
+                            </div>
+                            <div class="form-group">
+                                <label for="Dify知识库IP">Dify知识库IP</label>
+                                <input type="text" id="Dify知识库IP" name="Dify知识库IP">
+                            </div>
+                            <div class="form-group">
+                                <label for="Dify知识库密钥">Dify知识库密钥</label>
+                                <input type="text" id="Dify知识库密钥" name="Dify知识库密钥">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>记忆</h2>
+                            <div class="form-group">
+                                <label for="记忆模式">记忆模式</label>
+                                <select id="记忆模式" name="记忆模式">
+                                    <option value="临时记忆">临时记忆</option>
+                                    <option value="短期记忆">短期记忆</option>
+                                    <option value="中期记忆">中期记忆</option>
+                                    <option value="长期记忆">长期记忆</option>
+                                    <option value="超长记忆">超长记忆</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>(默认中期记忆。记忆越短，回复越快，消耗token越少)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="display">
+                        <div class="section">
+                            <h2>桌面宠物与界面</h2>
+                            <div class="form-group">
+                                <label for="桌面宠物置顶">桌面宠物置顶</label>
+                                <select id="桌面宠物置顶" name="桌面宠物置顶">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="桌宠位置x">桌宠位置 X</label>
+                                <input type="number" id="桌宠位置x" name="桌宠位置x">
+                            </div>
+                            <div class="form-group">
+                                <label for="桌宠位置y">桌宠位置 Y</label>
+                                <input type="number" id="桌宠位置y" name="桌宠位置y">
+                            </div>
+                            <div class="form-group">
+                                <label for="桌宠悬浮字幕开关(可选项:开启/关闭)">桌宠悬浮字幕开关</label>
+                                <select id="桌宠悬浮字幕开关(可选项:开启/关闭)" name="桌宠悬浮字幕开关(可选项:开启/关闭)">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>MMD 3D角色动作</h2>
+                            <div class="form-group">
+                                <label for="MMD 3D动作音乐开关(可选项:开启/关闭)">MMD 3D动作音乐开关</label>
+                                <select id="MMD 3D动作音乐开关(可选项:开启/关闭)" name="MMD 3D动作音乐开关(可选项:开启/关闭)">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="MMD 3D动作音乐名称(位于data/music_vmd文件夹)">MMD 3D动作音乐名称</label>
+                                <input type="text" id="MMD 3D动作音乐名称(位于data/music_vmd文件夹)" name="MMD 3D动作音乐名称(位于data/music_vmd文件夹)">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>服务端口配置</h2>
+                            <div class="form-group">
+                                <label for="对话网页端口">对话网页端口</label>
+                                <input type="number" id="对话网页端口" name="对话网页端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="L2D角色网页端口">L2D角色网页端口</label>
+                                <input type="number" id="L2D角色网页端口" name="L2D角色网页端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="MMD角色网页端口">MMD角色网页端口</label>
+                                <input type="number" id="MMD角色网页端口" name="MMD角色网页端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="VRM角色网页端口">VRM角色网页端口</label>
+                                <input type="number" id="VRM角色网页端口" name="VRM角色网页端口">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="smart-home">
+                        <div class="section">
+                            <h2>Home Assistant</h2>
+                            <div class="form-group">
+                                <label for="Home Assistant服务器地址">HA服务器地址</label>
+                                <input type="text" id="Home Assistant服务器地址" name="Home Assistant服务器地址">
+                            </div>
+                            <div class="form-group">
+                                <label for="灯类HA实体ID(按钮)">灯类HA实体ID(按钮)</label>
+                                <input type="text" id="灯类HA实体ID(按钮)" name="灯类HA实体ID(按钮)">
+                            </div>
+                            <div class="form-group">
+                                <label for="风扇类HA实体ID(按钮)">风扇类HA实体ID(按钮)</label>
+                                <input type="text" id="风扇类HA实体ID(按钮)" name="风扇类HA实体ID(按钮)">
+                            </div>
+                            <div class="form-group">
+                                <label for="插座类HA实体ID(按钮)">插座类HA实体ID(按钮)</label>
+                                <input type="text" id="插座类HA实体ID(按钮)" name="插座类HA实体ID(按钮)">
+                            </div>
+                            <div class="form-group">
+                                <label for="HA长期访问令牌">HA长期访问令牌</label>
+                                <input type="password" id="HA长期访问令牌" name="HA长期访问令牌">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="agi-pc-pro">
+                        <div class="section">
+                            <h2>通用自主操控Pro(首次使用需配置密钥)</h2>
+                            <div class="form-group">
+                                <label for="自主操控Pro地址">自主操控Pro地址 base_url</label>
+                                <input type="text" id="自主操控Pro地址" name="自主操控Pro地址">
+                            </div>
+                            <div class="form-group">
+                                <label for="自主操控Pro视觉模型">自主操控Pro视觉模型 vlm_model</label>
+                                <input type="text" id="自主操控Pro视觉模型" name="自主操控Pro视觉模型">
+                            </div>
+                            <div class="form-group">
+                                <label for="自主操控Pro密钥">自主操控Pro密钥 api_key</label>
+                                <input type="password" id="自主操控Pro密钥" name="自主操控Pro密钥">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="im-robot">
+                        <div class="section">
+                            <h2>IM(即时通讯)基础配置</h2>
+                            <div class="form-group">
+                                <label for="IM运行模式权限">IM运行模式权限</label>
+                                <select id="IM运行模式权限" name="IM运行模式权限">
+                                    <option value="仅聊天(推荐)">仅聊天(推荐)</option>
+                                    <option value="聊天+操控电脑">聊天+操控电脑</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>QQ机器人配置</h2>
+                            <div class="form-group">
+                                <label for="QQ机器人开关">QQ机器人开关</label>
+                                <select id="QQ机器人开关" name="QQ机器人开关">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="QQ机器人AppID">QQ机器人App ID</label>
+                                <input type="text" id="QQ机器人AppID" name="QQ机器人AppID" placeholder="例如: xxxxxxxxxx">
+                            </div>
+                            <div class="form-group">
+                                <label for="QQ机器人AppSecret">QQ机器人App Secret</label>
+                                <input type="password" id="QQ机器人AppSecret" name="QQ机器人AppSecret">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>钉钉机器人配置</h2>
+                            <div class="form-group">
+                                <label for="钉钉机器人开关">钉钉机器人开关</label>
+                                <select id="钉钉机器人开关" name="钉钉机器人开关">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="钉钉机器人ClientID">钉钉机器人Client ID</label>
+                                <input type="text" id="钉钉机器人ClientID" name="钉钉机器人ClientID" placeholder="例如: dingxxxxxxxxxx">
+                            </div>
+                            <div class="form-group">
+                                <label for="钉钉机器人ClientSecret">钉钉机器人Client Secret</label>
+                                <input type="password" id="钉钉机器人ClientSecret" name="钉钉机器人ClientSecret">
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h2>飞书机器人配置</h2>
+                            <div class="form-group">
+                                <label for="飞书机器人开关">飞书机器人开关</label>
+                                <select id="飞书机器人开关" name="飞书机器人开关">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="飞书机器人AppID">飞书机器人App ID</label>
+                                <input type="text" id="飞书机器人AppID" name="飞书机器人AppID" placeholder="例如: cli_xxxxxxxxxx">
+                            </div>
+                            <div class="form-group">
+                                <label for="飞书机器人AppSecret">飞书机器人App Secret</label>
+                                <input type="password" id="飞书机器人AppSecret" name="飞书机器人AppSecret">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="openclaw">
+                        <div class="section">
+                            <h2>OpenClaw(龙虾)对接配置</h2>
+                            <div class="form-group">
+                                <label for="OpenClaw网关地址">OpenClaw网关地址</label>
+                                <input type="text" id="OpenClaw网关地址" name="OpenClaw网关地址" placeholder="例如：http://127.0.0.1:18789">
+                            </div>
+                            <div class="form-group">
+                                <label for="OpenClaw API Key">OpenClaw API Key</label>
+                                <input type="password" id="OpenClaw API Key" name="OpenClaw API Key">
+                            </div>
+                            <div class="form-group">
+                                <label for="OpenClaw模型">OpenClaw模型</label>
+                                <input type="text" id="OpenClaw模型" name="OpenClaw模型" placeholder="默认模型：openclaw">
+                            </div>
+                            <div class="form-group">
+                                <label for="OpenClaw提示词">OpenClaw提示词</label>
+                                <textarea id="OpenClaw提示词" name="OpenClaw提示词" rows="5"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="mqtt">
+                        <div class="section">
+                            <h2>MQTT/QwenPaw对接配置</h2>
+                            <div class="form-group">
+                                <label for="MQTT开关">MQTT开关</label>
+                                <select id="MQTT开关" name="MQTT开关">
+                                    <option value="开启">开启</option>
+                                    <option value="关闭">关闭</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="MQTT Broker IP">MQTT Broker IP</label>
+                                <input type="text" id="MQTT Broker IP" name="MQTT Broker IP" placeholder="例如：127.0.0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="MQTT端口">MQTT端口</label>
+                                <input type="number" id="MQTT端口" name="MQTT端口">
+                            </div>
+                            <div class="form-group">
+                                <label for="MQTT服务质量">MQTT服务质量(QoS)</label>
+                                <select id="MQTT服务质量" name="MQTT服务质量">
+                                    <option value="0">0 - 高性能</option>
+                                    <option value="1">1 - 高可靠</option>
+                                    <option value="2">2 - 高质量</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="MQTT订阅主题">MQTT订阅主题</label>
+                                <input type="text" id="MQTT订阅主题" name="MQTT订阅主题" placeholder="例如：client/qwenpaw">
+                            </div>
+                            <div class="form-group">
+                                <label for="MQTT发布主题">MQTT发布主题</label>
+                                <input type="text" id="MQTT发布主题" name="MQTT发布主题" placeholder="例如：server/qwenpaw">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="cloud-api">
+                        <div class="section">
+                            <h2>Free云端AI API密钥配置</h2>
+                            <div class="form-group">
+                                <label for="GLM智谱BigModel开放平台key">GLM智谱BigModel Key(bigmodel.cn)<br>Free模型:<br>GLM-4.7-Flash(LLM)<br>GLM-4.6V-Flash(VLM)<br>CogView-3-Flash(绘画)<br>CogVideoX-Flash(视频)</label>
+                                <input type="password" id="GLM智谱BigModel开放平台key" name="GLM智谱BigModel开放平台key">
+                            </div>
+                            <div class="form-group">
+                                <label for="SiliconCloud硅基流动平台key">SiliconCloud硅基流动Key(siliconflow.cn)<br>Free模型:<br>千问Qwen3.5-4B(VLM)<br>千问Qwen3-8B(LLM)<br>DeepSeek-R1-8B(LLM)<br>Kolors(绘画)</label>
+                                <input type="password" id="SiliconCloud硅基流动平台key" name="SiliconCloud硅基流动平台key">
+                            </div>
+                            <div class="form-group">
+                                <label for="讯飞星火开放平台key">讯飞星火开放平台Key(xinghuo.<br>xfyun.cn/sparkapi)<br>Free模型:<br>星火Lite(LLM)</label>
+                                <input type="password" id="讯飞星火开放平台key" name="讯飞星火开放平台key">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="save-btn-container">
+            <button type="button" id="save-btn">💾 保存设置</button>
+        </div>
+    </div>
+    <div class="notification" id="notification">设置已保存！</div>
+    <script>
+        const edgeSpeakerList = [
+    "晓艺-年轻女声", "晓晓-成稳女声", "云健-大型纪录片男声", "云希-短视频热门男声", "云夏-年轻男声", "云扬-成稳男声",
+    "晓北-辽宁话女声", "晓妮-陕西话女声", "晓佳-粤语成稳女声", "晓满-粤语年轻女声", "云龙-粤语男声",
+    "晓辰-台湾话年轻女声","晓宇-台湾话成稳女声", "云哲-台湾话男声", "佳太-日语男声", "七海-日语女声"];
+        document.addEventListener('DOMContentLoaded', () => {
+            const edgeSelect = document.getElementById('edge-tts音色');
+            if (edgeSelect) {
+                edgeSpeakerList.forEach(speaker => {
+                    const option = document.createElement('option');
+                    option.value = speaker;
+                    option.textContent = speaker;
+                    edgeSelect.appendChild(option);
+                });
+            }
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            fetch('/get_config')
+                .then(response => response.json())
+                .then(data => {
+                    Object.keys(data).forEach(key => {
+                        const element = document.getElementById(key);
+                        if (element) {
+                            element.value = data[key];
+                        }
+                    });
+                })
+                .catch(error => console.error('Error loading config:', error));
+            document.getElementById('save-btn').addEventListener('click', () => {
+                const formData = new FormData(document.getElementById('config-form'));
+                const configData = {};
+                for (let [key, value] of formData.entries()) {
+                    if (!isNaN(value) && value.trim() !== '') {
+                        configData[key] = value.includes('.') ? parseFloat(value) : parseInt(value);
+                    } else {
+                        configData[key] = value;
+                    }
+                }
+                fetch('/save_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(configData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const notif = document.getElementById('notification');
+                    notif.textContent = data.message || "保存成功";
+                    notif.style.display = 'block';
+                    setTimeout(() => { notif.style.display = 'none'; }, 3000);
+                })
+                .catch(error => {
+                    alert('保存失败，请检查枫云AI助手是否在运行，错误详情: ' + error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

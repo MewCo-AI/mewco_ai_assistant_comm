@@ -1,10 +1,11 @@
-from main_sub import common_chat, run_ase_rp, run_ase_agent
+from PIL import ImageDraw
 from live2d import run_live2d
 from mmd import run_mmd
+from im_bot import *
 from vrm import *
 
 
-def refresh_preference():  # 刷新用户偏好
+def refresh_preference():
     while True:
         try:
             new_preference = {"语音识别模式": asr_menu.get(), "对话语言模型": llm_menu.get(),
@@ -19,7 +20,7 @@ def refresh_preference():  # 刷新用户偏好
         time.sleep(0.1)
 
 
-def text_chat(event=None):  # 打字发送
+def text_chat(event=None):
     def text_chat_th():
         stop_tts()
         msg = input_box.get("1.0", "end").strip()
@@ -77,16 +78,98 @@ def sense_voice_th_break():  # 语音识别(实时语音打断模式)
             time.sleep(0.1)
 
 
-# open_source_project_address:https://github.com/MewCo-AI/ai_virtual_mate_comm
-def switch_voice(event=None):  # 切换语音模式
+def switch_voice(event=None):
     if asr_menu.get() == "实时语音识别":
         voice_var.set("关闭语音识别")
     elif asr_menu.get() == "关闭语音识别":
         voice_var.set("实时语音识别")
 
 
-if chat_web_switch == "开启":
-    Thread(target=run_chatweb).start()
+def switch_float_ball():
+    def show_menu_fb(event):
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def on_left_button_press(event):
+        global _start_x, _start_y, _window_x, _window_y
+        _start_x = event.x_root
+        _start_y = event.y_root
+        _window_x = float_ball_w.winfo_x()
+        _window_y = float_ball_w.winfo_y()
+
+    def on_mouse_move(event):
+        global _window_x, _window_y
+        dx = event.x_root - _start_x
+        dy = event.y_root - _start_y
+        new_x = _window_x + dx
+        new_y = _window_y + dy
+        float_ball_w.geometry(f"+{new_x}+{new_y}")
+
+    def switch_back_window():
+        float_ball_w.destroy()
+        root.deiconify()
+
+    def create_circular_image(image_path, size):
+        try:
+            img = Image.open(image_path).convert("RGBA")
+        except:
+            img = Image.open("data/image/logo.png").convert("RGBA")
+        img.thumbnail((size, size), Image.Resampling.LANCZOS)
+        if img.width != img.height:
+            min_side = min(img.width, img.height)
+            left = (img.width - min_side) // 2
+            top = (img.height - min_side) // 2
+            right = left + min_side
+            bottom = top + min_side
+            img = img.crop((left, top, right, bottom))
+        img = img.resize((size, size), Image.Resampling.LANCZOS)
+        mask = Image.new("L", (size, size), 0)  # L模式：8位灰度图，0为全黑（透明）
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, size, size), fill=255)  # 绘制白色圆形（不透明）
+        result = Image.new("RGBA", (size, size), (0, 0, 0, 0))  # 透明背景
+        result.paste(img, (0, 0), mask=mask)  # 把原图贴到透明背景上，用mask控制显示区域
+        return ImageTk.PhotoImage(result)
+
+    root.withdraw()
+    float_ball_w = tk.Toplevel(root)
+    float_ball_w.attributes('-topmost', True)  # 置顶
+    float_ball_w.overrideredirect(True)  # 去除窗口边框
+    float_ball_w.attributes('-transparentcolor', 'black')  # 设置黑色为透明色（兜底）
+    float_ball_w.config(bg='black')
+    float_ball_w.iconbitmap('data/image/logo.ico')
+    try:
+        photo = create_circular_image(f"data/image/ch/{asst_name}.png", FT_WINDOW_SIZE)
+    except:
+        photo = create_circular_image("data/image/logo.png", FT_WINDOW_SIZE)
+    label = tk.Label(float_ball_w, image=photo, bg='black')
+    label.pack()
+    label.photo = photo
+    x = (float_ball_w.winfo_screenwidth() // 2) - (FT_WINDOW_SIZE // 2)
+    y = (float_ball_w.winfo_screenheight() // 2) - (FT_WINDOW_SIZE // 2)
+    float_ball_w.geometry(f"{FT_WINDOW_SIZE}x{FT_WINDOW_SIZE}+{x}+{y}")
+    menu = tk.Menu(float_ball_w, tearoff=0)
+    menu.configure(borderwidth=0, relief='flat', font=("宋体", 12))
+    menu.add_command(label="🌐 翻译屏幕", command=fb_translate_screen)
+    menu.add_command(label="💡 解释屏幕", command=fb_explain_screen)
+    menu.add_command(label="📝 总结屏幕", command=fb_summary_screen)
+    menu.add_separator()
+    menu.add_command(label="🎙 切换语音", command=fb_switch_voice)
+    menu.add_command(label="📷 切换主动", command=fb_switch_ase)
+    menu.add_separator()
+    menu.add_command(label="🪟 窗口模式", command=switch_back_window)
+    menu.add_separator()
+    menu.add_command(label="× 关闭软件", command=on_closing)
+    label.bind("<Button-3>", show_menu_fb)  # 右键显示菜单
+    float_ball_w.bind("<Button-1>", on_left_button_press)  # 左键按下
+    float_ball_w.bind("<B1-Motion>", on_mouse_move)  # 左键拖动
+    float_ball_w.mainloop()
+
+
+FT_WINDOW_SIZE = 50
+_start_x, _start_y, _window_x, _window_y = 0, 0, 0, 0
+Thread(target=run_chatweb).start()
 if voice_break == "开启":
     Thread(target=sense_voice_th_break).start()
 else:
@@ -158,8 +241,10 @@ send_icon = Image.open("data/image/ui/send.png")
 send_icon = send_icon.resize((int(25 * scaling_factor), int(25 * scaling_factor)), Image.Resampling.LANCZOS)
 send_icon = ImageTk.PhotoImage(send_icon)
 Button(root, image=send_icon, command=text_chat, borderwidth=0, highlightthickness=0).place(relx=0.97, rely=0.945)
+Button(root, text="🔮切换至悬浮球", command=switch_float_ball, borderwidth=0, highlightthickness=0).place(relx=0.02,
+                                                                                                         rely=0.11)
 Button(root, text="📱手机网页访问", command=open_web_tips, borderwidth=0, highlightthickness=0).place(relx=0.02,
-                                                                                                     rely=0.13)
+                                                                                                     rely=0.16)
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
 os.kill(os.getpid(), 15)

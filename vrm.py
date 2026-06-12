@@ -1,13 +1,13 @@
 from chat_web import *
 
-app2 = Flask(__name__)
+app_vrm = Flask(__name__)
 vrm_web_template = '''
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <link rel="icon" type="image/png" href="/assets/image/logo.png"/>
-    <title>VRM 3D角色 - 枫云AI虚拟伙伴社区版</title>
+    <title>VRM 3D角色 - 枫云AI助手社区版</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
@@ -538,28 +538,27 @@ vrm_web_template = '''
 '''
 
 
-# open_source_project_address:https://github.com/MewCo-AI/ai_virtual_mate_comm
-@app2.route('/')
+@app_vrm.route('/')
 def index():
     return render_template_string(vrm_web_template, model_name=vrm_model_name)
 
 
-@app2.route('/assets/vrm_model/<path:filename>')
+@app_vrm.route('/assets/vrm_model/<path:filename>')
 def serve_vrm_model(filename):
     return send_from_directory('dist/assets/vrm_model', filename)
 
 
-@app2.route('/assets/vrm_core/<path:filename>')
+@app_vrm.route('/assets/vrm_core/<path:filename>')
 def serve_vrm_core(filename):
     return send_from_directory('dist/assets/vrm_core', filename)
 
 
-@app2.route('/assets/image/<path:filename>')
+@app_vrm.route('/assets/image/<path:filename>')
 def serve_image(filename):
     return send_from_directory('dist/assets/image', filename)
 
 
-@app2.route('/is_audio_playing')
+@app_vrm.route('/is_audio_playing')
 def is_audio_playing():
     try:
         is_playing = pg.mixer.music.get_busy() if pg.mixer.get_init() else False
@@ -569,4 +568,4 @@ def is_audio_playing():
 
 
 def run_vrm():
-    app2.run(port=vrm_port, host="0.0.0.0")
+    app_vrm.run(port=vrm_port, host="0.0.0.0")

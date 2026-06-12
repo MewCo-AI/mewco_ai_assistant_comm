@@ -10,7 +10,7 @@ FixedSize_x, FixedSize_y, ZoomFactor = 200, 350, 0.55
 screen_width, screen_height = pag.size()
 
 
-class WebMenu(QMenu):  # 桌宠右键菜单
+class WebMenu(QMenu):
     def __init__(self):
         super(WebMenu, self).__init__()
         self.chat_act = QAction("💬 便捷聊天")
@@ -25,7 +25,7 @@ class WebMenu(QMenu):  # 桌宠右键菜单
         self.addAction(self.exit_act)
 
 
-class ChatWidget(QWidget):  # 桌宠聊天框
+class ChatWidget(QWidget):
     def __init__(self, parent=None, is_input=True, message=""):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint |
@@ -86,8 +86,7 @@ class ChatWidget(QWidget):  # 桌宠聊天框
         self.close()
 
 
-# open_source_project_address:https://github.com/MewCo-AI/ai_virtual_mate_comm
-class Live2dPet(QMainWindow):  # 桌宠
+class Live2dPet(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowMinimizeButtonHint)
@@ -95,7 +94,7 @@ class Live2dPet(QMainWindow):  # 桌宠
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
-        self.setWindowTitle("桌宠 - 枫云AI虚拟伙伴")
+        self.setWindowTitle("桌宠 - 枫云AI助手社区版")
         self.setWindowIcon(QIcon('data/image/logo.png'))
         self.pet_browser = QWebEngineView()
         self.setCentralWidget(self.pet_browser)
@@ -165,7 +164,7 @@ class Live2dPet(QMainWindow):  # 桌宠
     def show_thinking_label(self):
         if self.thinking_label:
             self.thinking_label.close()
-        self.thinking_label = ChatWidget(parent=self, is_input=False, message=f"{mate_name}正在思考中...")
+        self.thinking_label = ChatWidget(parent=self, is_input=False, message=f"{asst_name}正在思考中...")
         x = self.x() + int(self.width() / 1.5)
         y = self.y()
         self.thinking_label.move(x, y)
@@ -183,7 +182,7 @@ class Live2dPet(QMainWindow):  # 桌宠
     def send_chat_request(self, message):
         try:
             response = rq.get("http://127.0.0.1:5249/pet_chat",
-                              params={"msg": message, "key": "desktoppetchat"})
+                              params={"msg": message, "key": "mewcopetchat"})
             if response.status_code == 200:
                 data = response.json()
                 answer = data["answer"]
@@ -193,7 +192,7 @@ class Live2dPet(QMainWindow):  # 桌宠
         except Exception as e:
             answer = f"发生错误，详情：{e}"
         self.hide_thinking_label()
-        if pet_subtitle_switch == "on":
+        if pet_subtitle_switch == "开启":
             self.show_chat_response(answer)
             wait_time = len(answer) * 250
             if wait_time > 30000:
