@@ -112,7 +112,7 @@
 
 3. **配置环境**
    - 在 `data/db/config.json` 中填写云端API密钥（GLM智谱、SiliconCloud、讯飞星火等）。
-   - 从 [网盘模型整合包](https://pan.baidu.com/s/1xjOBFyVQro3klnobfbYIMQ?pwd=aivm) 下载ASR、声纹识别、TTS模型，解压至 `data/model` 文件夹。
+   - 从 [网盘模型整合包](https://pan.baidu.com/s/1-drDeS7W-2HSLKx-hBLycg?pwd=maia) 下载ASR、声纹识别、音频事件检测、TTS模型，解压至 `data/model` 文件夹。
 
 4. **运行应用**
    ```bash
