@@ -1,8 +1,0 @@
-[Home Assistant服务器地址]
-把该行替换为HA服务器地址，例如 127.0.0.1:8123
-
-[实体ID(仅支持按钮)]
-把该行替换为实体ID，例如 button.yeelink_cn_xxxxxxxxx_lamp4_toggle_a_2_1
-
-[长期访问令牌]
-把该行替换为长期访问令牌，例如 xxxx.xxxx.xxxx-xxxx
